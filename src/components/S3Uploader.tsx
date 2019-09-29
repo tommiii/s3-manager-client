@@ -1,9 +1,28 @@
-import React, { FunctionComponent, useRef, useState } from "react";
+import { memberExpression } from "@babel/types";
+import ky from "ky";
+import { string } from "prop-types";
+import React, { FunctionComponent, useEffect, useRef, useState } from "react";
 
-const S3Uploader: FunctionComponent<{}> = ({ }) => {
+const { REACT_APP_API_URL } = process.env;
+
+interface Notification {
+  text: string;
+  type: string;
+}
+
+const S3Uploader: FunctionComponent<{}> = () => {
 
   const [file, setFile] = useState<File | null>(null);
+  const [notification, setNotification] = useState<Notification | null>(null);
   const inputEl = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (notification) {
+      setTimeout(() => {
+        setNotification(null);
+      }, 3000);
+    }
+  }, [notification]);
 
   const formatBytes = (bytes: number, decimals: number = 2) => {
     if (bytes === 0) { return "0 Bytes"; }
@@ -35,8 +54,33 @@ const S3Uploader: FunctionComponent<{}> = ({ }) => {
         {file && <button
           type="button"
           className="btn btn-dark float-right"
-          onClick={() => null}
-        >Upload</button>}
+          onClick={async () => {
+            if (file) {
+              const { type, size } = file;
+              try {
+                const url = `${REACT_APP_API_URL}/upload-on-s3`;
+                const headers: any = {
+                  "Content-Length": size,
+                  "Content-Type": type,
+                };
+                await ky.put(url, {
+                  body: file,
+                  headers,
+                  timeout: false,
+                }).blob();
+                setNotification({
+                  text: "Your file has been successfully uploaded!!",
+                  type: "success",
+                });
+              } catch (err) {
+                setNotification({
+                  text: "Oops! Something went wrong!",
+                  type: "danger",
+                });
+              }
+            }
+          }}
+        > Upload</button>}
       </div>
       <input
         ref={inputEl}
@@ -48,7 +92,13 @@ const S3Uploader: FunctionComponent<{}> = ({ }) => {
           }
         }}
       />
-    </div>
+      {
+        notification && <div className={`alert alert-${notification.type}`} role="alert">
+          {notification.text}
+        </div>
+      }
+    </div >
+
   );
 };
 
