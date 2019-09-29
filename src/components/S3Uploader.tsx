@@ -1,6 +1,4 @@
-import { memberExpression } from "@babel/types";
 import ky from "ky";
-import { string } from "prop-types";
 import React, { FunctionComponent, useEffect, useRef, useState } from "react";
 
 const { REACT_APP_API_URL } = process.env;
@@ -9,6 +7,20 @@ interface Notification {
   text: string;
   type: string;
 }
+
+export const toBase64 = (file: File) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = () => {
+      if (reader.result) {
+        resolve((reader.result as string).split(",")[1]);
+      }
+
+    };
+    reader.onerror = reject;
+  });
+};
 
 const S3Uploader: FunctionComponent<{}> = () => {
 
@@ -56,16 +68,14 @@ const S3Uploader: FunctionComponent<{}> = () => {
           className="btn btn-dark float-right"
           onClick={async () => {
             if (file) {
-              const { type, size } = file;
               try {
                 const url = `${REACT_APP_API_URL}/upload-on-s3`;
-                const headers: any = {
-                  "Content-Length": size,
-                  "Content-Type": type,
-                };
+                const body: string = JSON.stringify({
+                  base64: await toBase64(file),
+                  key: file.name,
+                });
                 await ky.put(url, {
-                  body: file,
-                  headers,
+                  body,
                   timeout: false,
                 }).blob();
                 setNotification({
