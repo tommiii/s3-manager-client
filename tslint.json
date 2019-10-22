@@ -3,9 +3,28 @@
     "extends": [
         "tslint:recommended"
     ],
+    "rulesDirectory": [
+      "node_modules/tslint-eslint-rules/dist/rules"
+    ],
     "jsRules": {},
     "rules": {
-        "interface-name": false
-    },
-    "rulesDirectory": []
+        "interface-name": false,
+        "no-console": true,
+        "no-trailing-spaces": [
+          "error",
+          {
+            "skipBlankLines": true
+          }
+        ],
+        "comma-dangle": [
+            "error",
+            {
+              "arrays": "always-multiline",
+              "objects": "always-multiline",
+              "imports": "always-multiline",
+              "exports": "always-multiline",
+              "functions": "never"
+            }
+          ]
+    }
 }

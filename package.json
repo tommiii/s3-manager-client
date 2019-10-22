@@ -1,8 +1,11 @@
 {
   "name": "s3-uploader-client",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^1.2.25",
+    "@fortawesome/free-solid-svg-icons": "^5.11.2",
+    "@fortawesome/react-fontawesome": "^0.1.6",
     "@types/jest": "24.0.18",
     "@types/node": "12.7.8",
     "@types/react": "16.9.3",
@@ -36,6 +39,8 @@
     ]
   },
   "devDependencies": {
-    "dotenv": "^8.1.0"
+    "dotenv": "^8.1.0",
+    "tslint": "^5.20.0",
+    "tslint-eslint-rules": "^5.4.0"
   }
 }

@@ -1,3 +1,5 @@
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import ky from "ky";
 import React, { FunctionComponent, useEffect, useRef, useState } from "react";
 
@@ -8,23 +10,10 @@ interface Notification {
   type: string;
 }
 
-export const toBase64 = (file: File) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onloadend = () => {
-      if (reader.result) {
-        resolve((reader.result as string).split(",")[1]);
-      }
-
-    };
-    reader.onerror = reject;
-  });
-};
-
 const S3Uploader: FunctionComponent<{}> = () => {
 
   const [file, setFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [notification, setNotification] = useState<Notification | null>(null);
   const inputEl = useRef<HTMLInputElement>(null);
 
@@ -65,24 +54,39 @@ const S3Uploader: FunctionComponent<{}> = () => {
           }} >{!file ? "Select file" : "Select another file"}</button>
         {file && <button
           type="button"
+          disabled={isLoading}
           className="btn btn-dark float-right"
           onClick={async () => {
             if (file) {
               try {
-                const url = `${REACT_APP_API_URL}/upload-on-s3`;
+                setIsLoading(true);
+                const url: string = `${REACT_APP_API_URL}/get-upload-persigned-url`;
+                const { type }: { type: string } = file;
                 const body: string = JSON.stringify({
-                  base64: await toBase64(file),
                   key: file.name,
+                  type,
                 });
-                await ky.put(url, {
+
+                const uploadSignedUrl: string = await ky.post(url, {
                   body,
                   timeout: false,
+                }).json();
+
+                const headers = new Headers();
+                headers.append("Content-Type", type);
+                headers.append("Access-Control-Allow-Headers", "*");
+                await ky.put(uploadSignedUrl, {
+                  body: file,
+                  headers,
+                  timeout: false,
                 }).blob();
+                setIsLoading(false);
                 setNotification({
                   text: "Your file has been successfully uploaded!!",
                   type: "success",
                 });
               } catch (err) {
+                setIsLoading(false);
                 setNotification({
                   text: "Oops! Something went wrong!",
                   type: "danger",
@@ -90,7 +94,7 @@ const S3Uploader: FunctionComponent<{}> = () => {
               }
             }
           }}
-        > Upload</button>}
+        > {isLoading ? <FontAwesomeIcon icon={faSpinner} spin /> : "Upload"}</button>}
       </div>
       <input
         ref={inputEl}
