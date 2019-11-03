@@ -1,7 +1,6 @@
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import ky from "ky";
 import React, { FunctionComponent, useEffect, useRef, useState } from "react";
+import { Badge, Button, Spinner } from "reactstrap";
 
 const { REACT_APP_API_URL } = process.env;
 
@@ -37,25 +36,19 @@ const S3Uploader: FunctionComponent<{}> = () => {
   };
 
   return (
-    <div className="S3Uploader">
-      <div className="jumbotron text-left">
-        <h1 className="display-4">S3 Uploader</h1>
-        <p className="lead">Simple S3 File Uploader, made with React and TypeScript</p>
-        <hr className="my-4" />
-        {file && <p>Filename: {file.name}</p>}
-        {file && <p>Size: {formatBytes(file.size)}</p>}
-        <button
-          type="button"
-          className="btn btn-light float-left"
+    <div className="S3Uploader p-3">
+      <div className="text-left">
+        <Button
+          color="secondary"
           onClick={() => {
             if (inputEl && inputEl.current) {
               inputEl.current.click();
             }
-          }} >{!file ? "Select file" : "Select another file"}</button>
-        {file && <button
-          type="button"
+          }} >{!file ? "Select file" : "Select another file"}</Button>
+        {file && <Button
           disabled={isLoading}
-          className="btn btn-dark float-right"
+          className="float-right"
+          color="secondary"
           onClick={async () => {
             if (file) {
               try {
@@ -94,8 +87,13 @@ const S3Uploader: FunctionComponent<{}> = () => {
               }
             }
           }}
-        > {isLoading ? <FontAwesomeIcon icon={faSpinner} spin /> : "Upload"}</button>}
+        > {isLoading ? <Spinner color="light" /> : "Upload"}   </Button>}
       </div>
+      {file && <div className="mt-4">
+        <span>Filename: <Badge color="secondary">{file.name}</Badge></span>
+        <hr />
+        <span>Size: <Badge color="secondary">{formatBytes(file.size)}</Badge></span>
+      </div>}
       <input
         ref={inputEl}
         type="file"
