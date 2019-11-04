@@ -1,28 +1,15 @@
 import ky from "ky";
-import React, { FunctionComponent, useEffect, useRef, useState } from "react";
+import React, { FunctionComponent, useRef, useState } from "react";
 import { Badge, Button, Spinner } from "reactstrap";
 
 const { REACT_APP_API_URL } = process.env;
-
-interface Notification {
-  text: string;
-  type: string;
+interface Props {
+  onFileUpload?: ({ success, text }: { success: boolean, text?: string; }) => any;
 }
-
-const S3Uploader: FunctionComponent<{}> = () => {
-
+const S3Uploader: FunctionComponent<Props> = ({ onFileUpload }) => {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [notification, setNotification] = useState<Notification | null>(null);
   const inputEl = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (notification) {
-      setTimeout(() => {
-        setNotification(null);
-      }, 3000);
-    }
-  }, [notification]);
 
   const formatBytes = (bytes: number, decimals: number = 2) => {
     if (bytes === 0) { return "0 Bytes"; }
@@ -74,25 +61,29 @@ const S3Uploader: FunctionComponent<{}> = () => {
                   timeout: false,
                 }).blob();
                 setIsLoading(false);
-                setNotification({
-                  text: "Your file has been successfully uploaded!!",
-                  type: "success",
-                });
+                if (onFileUpload) {
+                  onFileUpload({
+                    success: true,
+                    text: "Your file has been successfully uploaded!!",
+                  });
+                }
               } catch (err) {
                 setIsLoading(false);
-                setNotification({
-                  text: "Oops! Something went wrong!",
-                  type: "danger",
-                });
+                if (onFileUpload) {
+                  onFileUpload({
+                    success: false,
+                    text: "Oops! Something went wrong uploading your file!",
+                  });
+                }
               }
             }
           }}
         > {isLoading ? <Spinner color="light" /> : "Upload"}   </Button>}
       </div>
       {file && <div className="mt-4">
-        <span>Filename: <Badge color="secondary">{file.name}</Badge></span>
-        <hr />
-        <span>Size: <Badge color="secondary">{formatBytes(file.size)}</Badge></span>
+        <h6>File info:</h6>
+        <p><Badge color="secondary">Filename: {file.name}</Badge></p>
+        <p><Badge color="secondary">Size: {formatBytes(file.size)}</Badge></p>
       </div>}
       <input
         ref={inputEl}
@@ -104,11 +95,6 @@ const S3Uploader: FunctionComponent<{}> = () => {
           }
         }}
       />
-      {
-        notification && <div className={`alert alert-${notification.type}`} role="alert">
-          {notification.text}
-        </div>
-      }
     </div >
 
   );
