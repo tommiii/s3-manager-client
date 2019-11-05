@@ -1,7 +1,8 @@
 import ky from "ky";
 import _ from "lodash";
 import React, { FunctionComponent, useEffect, useState } from "react";
-import { Badge, Button, Jumbotron, Modal, Spinner, Table, UncontrolledAlert } from "reactstrap";
+import { Badge, Button, Jumbotron, Modal, Spinner, Table } from "reactstrap";
+import Alert from "./components/Alert";
 import S3Uploader from "./components/S3Uploader";
 
 const { REACT_APP_API_URL } = process.env;
@@ -124,10 +125,8 @@ const App: FunctionComponent = () => {
             setHasToFetch(true);
           }} />
       </Modal>
-      {alert && <div className="fixed-bottom px-3">
-        <UncontrolledAlert color={alert.success ? "success" : "danger"}>
-          {alert.text}
-        </UncontrolledAlert>
+      {alert && alert.text && <div className="fixed-bottom px-3">
+        <Alert text={alert.text} success={alert.success} />
       </div>}
     </div>
   );
