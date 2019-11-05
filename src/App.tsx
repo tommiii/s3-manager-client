@@ -20,6 +20,7 @@ interface AlertType {
 const App: FunctionComponent = () => {
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [hasToFetch, setHasToFetch] = useState<boolean>(true);
   const [alert, setAlert] = useState<AlertType | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [s3Objects, setS3Objects] = useState<S3ContentsListType[]>([]);
@@ -47,8 +48,11 @@ const App: FunctionComponent = () => {
       }
 
     };
-    fetchS3Objects();
-  }, []);
+    if (hasToFetch) {
+      fetchS3Objects();
+      setHasToFetch(false);
+    }
+  }, [hasToFetch]);
 
   const renderTable = () => <Table striped responsive>
     <thead>
@@ -68,7 +72,24 @@ const App: FunctionComponent = () => {
         <td><Badge color="light">{extension}</Badge></td>
         <td><Badge color="light">{size}</Badge></td>
         <td><Badge color="light">{lastModified}</Badge></td>
-        <td><Button size="sm" color="danger">Delete</Button></td>
+        <td><Button onClick={async () => {
+          const S3Key = `${filename}.${extension}`;
+          const url: string = `${REACT_APP_API_URL}/delete-object/${S3Key}`;
+          try {
+            await ky.delete(url).json();
+            setAlert({
+              success: true,
+              text: "Your file has been successfully deleted",
+            });
+            setHasToFetch(true);
+          } catch (err) {
+            setAlert({
+              success: false,
+              text: "Oops! Something went wrong deliting your file!",
+            });
+          }
+
+        }} size="sm" color="danger">Delete</Button></td>
 
       </tr>)}
     </tbody>
@@ -91,9 +112,7 @@ const App: FunctionComponent = () => {
       {isLoading && <div className="text-center">
         <Spinner style={{ width: "3rem", height: "3rem" }} type="grow" />
       </div>}
-      {!isLoading
-        && !alert
-        && (!!_.size(s3Objects) ? renderTable() : "No objects in your s3 bucket, upload something!")}
+      {!isLoading && (!!_.size(s3Objects) ? renderTable() : "No objects in your s3 bucket, upload something!")}
       <Modal isOpen={isOpen} toggle={() => { setIsOpen((prevIsOpen) => !prevIsOpen); }}  >
         <S3Uploader
           onFileUpload={({ success, text }: AlertType) => {
@@ -101,10 +120,12 @@ const App: FunctionComponent = () => {
               success,
               text,
             });
+            setIsOpen(false);
+            setHasToFetch(true);
           }} />
       </Modal>
       {alert && <div className="fixed-bottom px-3">
-        <UncontrolledAlert color={alert.success ? "sucess" : "danger"}>
+        <UncontrolledAlert color={alert.success ? "success" : "danger"}>
           {alert.text}
         </UncontrolledAlert>
       </div>}
