@@ -7,6 +7,7 @@ interface Props {
   onFileUpload?: ({ success, text }: { success: boolean, text?: string; }) => any;
 }
 const S3Uploader: FunctionComponent<Props> = ({ onFileUpload }) => {
+
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const inputEl = useRef<HTMLInputElement>(null);
@@ -22,62 +23,66 @@ const S3Uploader: FunctionComponent<Props> = ({ onFileUpload }) => {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
   };
 
+  const uploadFile = async () => {
+    if (file) {
+      try {
+        setIsLoading(true);
+        const url: string = `${REACT_APP_API_URL}/get-upload-persigned-url`;
+        const { type }: { type: string } = file;
+        const body: string = JSON.stringify({
+          key: file.name,
+          type,
+        });
+
+        const uploadSignedUrl: string = await ky.post(url, {
+          body,
+          timeout: false,
+        }).json();
+
+        const headers = new Headers();
+        headers.append("Content-Type", type);
+        headers.append("Access-Control-Allow-Headers", "*");
+        await ky.put(uploadSignedUrl, {
+          body: file,
+          headers,
+          timeout: false,
+        }).blob();
+        setIsLoading(false);
+        if (onFileUpload) {
+          onFileUpload({
+            success: true,
+            text: "Your file has been successfully uploaded!!",
+          });
+        }
+      } catch (err) {
+        setIsLoading(false);
+        if (onFileUpload) {
+          onFileUpload({
+            success: false,
+            text: "Oops! Something went wrong uploading your file!",
+          });
+        }
+      }
+    }
+  };
+
+  const selectFile = () => {
+    if (inputEl && inputEl.current) {
+      inputEl.current.click();
+    }
+  };
+
   return (
     <div className="S3Uploader p-3">
       <div className="text-left">
         <Button
           color="secondary"
-          onClick={() => {
-            if (inputEl && inputEl.current) {
-              inputEl.current.click();
-            }
-          }} >{!file ? "Select file" : "Select another file"}</Button>
+          onClick={selectFile} >{!file ? "Select file" : "Select another file"}</Button>
         {file && <Button
           disabled={isLoading}
           className="float-right"
           color="secondary"
-          onClick={async () => {
-            if (file) {
-              try {
-                setIsLoading(true);
-                const url: string = `${REACT_APP_API_URL}/get-upload-persigned-url`;
-                const { type }: { type: string } = file;
-                const body: string = JSON.stringify({
-                  key: file.name,
-                  type,
-                });
-
-                const uploadSignedUrl: string = await ky.post(url, {
-                  body,
-                  timeout: false,
-                }).json();
-
-                const headers = new Headers();
-                headers.append("Content-Type", type);
-                headers.append("Access-Control-Allow-Headers", "*");
-                await ky.put(uploadSignedUrl, {
-                  body: file,
-                  headers,
-                  timeout: false,
-                }).blob();
-                setIsLoading(false);
-                if (onFileUpload) {
-                  onFileUpload({
-                    success: true,
-                    text: "Your file has been successfully uploaded!!",
-                  });
-                }
-              } catch (err) {
-                setIsLoading(false);
-                if (onFileUpload) {
-                  onFileUpload({
-                    success: false,
-                    text: "Oops! Something went wrong uploading your file!",
-                  });
-                }
-              }
-            }
-          }}
+          onClick={uploadFile}
         > {isLoading ? <Spinner color="light" /> : "Upload"}   </Button>}
       </div>
       {file && <div className="mt-4">
