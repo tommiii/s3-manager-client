@@ -11,7 +11,7 @@
     "@types/reactstrap": "^8.0.6",
     "bootstrap": "^4.3.1",
     "ky": "^0.14.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.21",
     "react": "^16.10.0",
     "react-dom": "^16.10.0",
     "react-scripts": "3.1.2",
